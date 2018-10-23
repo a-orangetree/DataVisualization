@@ -1,0 +1,70 @@
+---
+title: "ggplot Lab II (L04)"
+author: "STAT 359 Data Visualization"
+date: "January 19, 2016"
+output: html_document
+---
+
+# Overview
+
+The goal of this lab is to develop a greater understanding of standard `ggplot2` code syntax and learn additional geometric objects (`geom`s) and statistical transformations (`stat`s). Meaning we need to continue thinking about our graphics as being built by a series of layers. (i.e. `geom_xxx`, `stat_xxx`, `facet_xxx`, etc...). **We will no longer be using `qplot()`. Any labs turned in using `qplot()` will not be graded.**
+
+# Dataset 
+
+We will require the same CDC BRFSS survey subsample utilized in *qplot Lab (L02)* and *ggplot Lab I (L03)*. As a reminder, the dataset contains 20,000 complete observations/records of 9 variables/fields, described below.
+
+* `genhlth` - How would you rate your general health? (excellent, very good, good, fair, poor)
+* `exerany` - Have you exercised in the past month? (1=yes, 0=no) 
+* `hlthplan` - Do you have some form of health coverage? (1=yes, 0=no) 
+* `smoke100` - Have you smoked at least 100 cigarettes in your life time? (1=yes, 0=no) 
+* `height` -  height in inches
+* `weight` - weight in pounds
+* `wtdesire` - weight desired in pounds
+* `age` - in years
+* `gender` - m for males and f for females
+
+# Task
+
+Run the provided R code, just below, prior to completing the 4 tasks. 
+```{r}
+# Read in the cdc dataset 
+cdc <- read.table(file = "cdc.txt",sep="|",header = TRUE)
+
+# Selecting a random subset of size 100; set the seed for reproducibility
+set.seed(8221984)
+cdc_small <- cdc[sample(x = nrow(cdc),size = 100,replace = FALSE),]
+
+# Calling libraries that might be needed.
+# Might have to install the packages first (no need to include that code once installed).
+library(ggplot2)
+library(hexbin) 
+```
+
+1. Using `cdc_small` create a scatter plot of `log(weight)` by `height` with the following:
+    + solid blue triangles of size 3 as the plotting character;
+    + one red simple linear regression fit with 0.99 confidence band that is semi-transparent red **(without using `geom_smooth`)**;
+    + and add an appropriate main graph title and new appropriate axis labels.
+    + Points should be plotted underneath the linear regression fit.
+<br><br>
+
+2. Using Bilbo Baggins' responses below to the CDC BRSFF questions and the `cdc` dataset, add Bilbo's data point as a solid red circle of size 5 to a scatter plot of  `weight` by `height` with transparent solid blue circles  of size 3 as the plotting characters. In addition, label the point with his name in red. (Hint: default shape is a solid circle)  
+
+* `genhlth` - How would you rate your general health? **fair**
+* `exerany` - Have you exercised in the past month? **1=yes**
+* `hlthplan` - Do you have some form of health coverage? **0=no**
+* `smoke100` - Have you smoked at least 100 cigarettes in your life time? **1=yes** 
+* `height` -  height in inches: **46**
+* `weight` - weight in pounds: **120**
+* `wtdesire` - weight desired in pounds: **120**
+* `age` - in years: **45**
+* `gender` - m for males and f for females: **m**
+<br><br>
+
+3. As best you can, describe the plot that the standard `ggplot` code provided below would render.
+
+```{r, eval = FALSE}
+ggplot( aes(x = income, fill = gender), data = google_analyst_income_data) + geom_density(alpha = 0.2)
+```
+<br><br>
+
+4. Using the `cdc` dataset create 5 plots that visualize the 2D density surface of `wtdesire` by `weight`. (Hint: `stat_density2d()`, `stat_density_2d()`, `stat_bin2d()`, `stat_hexbin()`, or their respective geoms: `geom_density2d()`, `geom_density_2d()`, `geom_bin2d()`, `geom_hexbin()` might be useful). As always you are encouraged to also experiment with other aesthetics or faceting in conjunction with this task.

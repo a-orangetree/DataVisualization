@@ -1,0 +1,151 @@
+---
+title: "Lab 4"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+  
+# Overview
+  
+The goal of this lab is to develop a greater understanding of standard `ggplot2` code syntax and learn additional geometric objects (`geom`s) and statistical transformations (`stat`s). Meaning we need to continue thinking about our graphics as being built by a series of layers. (i.e. `geom_xxx`, `stat_xxx`, `facet_xxx`, etc...). 
+  
+# Dataset 
+
+The `fifa_ranking.csv` is from Kaggle.com (https://www.kaggle.com/tadhgfitzgerald/fifa-international-soccer-mens-ranking-1993now). The world football governing body FIFA has been ranking international teams since 1992. This dataset contains all available FIFA men's international soccer rankings from August 1993 to April 2018. The rankings and points have been scraped from the official FIFA website.
+
+A more detailed explanation and history of the rankings is available here: https://en.wikipedia.org/wiki/FIFA_World_Rankings
+
+# Task
+
+Run the below R code prior to completing the tasks. 
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(lubridate)
+library(ggmap)
+
+# Import data
+fifa_data <- read_csv('fifa_ranking.csv') %>% 
+  mutate(confederation = factor(confederation),
+         rank_year = year(rank_date))
+
+# Create a subset of the data consisting only of the most recent ranking
+most_recent_ranking <- filter(fifa_data, rank_date == max(rank_date))
+
+# Create a subset of the data consisting only of first place
+first_place_countries <- filter(fifa_data, rank == 1)
+```
+
+<br>
+
+0a. What does the above `filter()` function do?
+
+`It returns a subset the data where one or more given conditions are true.`
+
+<br>
+
+0b. How many rows and columns does my data have?
+
+```{r, message=FALSE, warning=FALSE}
+dim(fifa_data)
+```
+
+<br>
+
+0c. How many unique countries are in the data? (hint: use the n_distinct() function)
+
+```{r, message=FALSE, warning=FALSE}
+n_distinct(fifa_data$country_full)
+```
+
+<br>
+
+1. Display the association between previous points and total points. Add a smoother (using at least 2 optional parameters to enhance the smoother), main title, and label the axes. (hint1: what type of plot is best for TWO CONTINUOUS QUANTITATIVE variables?, hint2: if you don't know how to do something, try Google!)
+
+What type of line best fits the points?
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(most_recent_ranking, aes(total_points, previous_points)) +
+  geom_point() +
+  geom_smooth(method = lm, color = 'red') +
+  ggtitle('Relationship between Total and Previous Points') + 
+  labs(x = 'Total Points', y = 'Previous Points')
+```
+  
+<br>
+
+2. Display rank by confederation. This visualization should indicate the median rank along with where the majority (e.g. interquartile range) of teams rank. Include a main title and label the axes. (hint: what type of plot displays the median and interquartile range of a CONTINUOUS QUANTITATIVE variable broken out by a DISCRETE CATEGORICAL variable?)
+
+What confederation is the best? What's your logic?
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(most_recent_ranking, aes(confederation, rank)) +
+  geom_boxplot() +
+  ggtitle('Current Rank by Confederation') +
+  labs(x = 'Confederation', y = 'Rank')
+```
+
+<br>
+
+3. Create a visualization using the `most_recent_ranking` that displays individual countries (use `country_abrv`) current points versus points from last year (hint: this plot should look similar to a scatter plot, but instead of a point it displays text, i.e. the country abbreviation). Color cases by confederation, include a main title, and label the axes.
+
+What are the differences between this visualization and the previous? Why are they different?
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(most_recent_ranking, aes(cur_year_avg, last_year_avg)) +
+  geom_text(aes(label = country_abrv, color = confederation), check_overlap = TRUE) +
+  ggtitle('Current Year Average versus Last Year Average') + 
+  labs(x = 'Current Average', y = 'Last Year Average')
+```
+
+<br>
+
+4. What is the distribution of first place finishes by country? Add the count of first place finishes to the visualization? Use the `first_place_countries` data set defined above. (hint: what type of plot COUNTS observations of a DISCRETE CATEGORICAL variable?) Add a main title and labels the axes.
+
+Is alphabetical the best ordering of these countries? If now, what would be better?
+
+Challenge: display the count of each column as a number within the visualization
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(first_place_countries, aes(country_abrv)) +
+  geom_histogram(stat='count', fill = 'black') +
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  ggtitle('Number of First Place Rankings by Country') +
+  labs(x = 'Country', y = 'Number of First Place Rankings')
+```
+
+<br>
+
+5. Using the below code as an example, create a visualization of bike racks in Chicago (use the `Chicago_Bike_Racks.csv` data).
+
+Data for this secion was found at:
+
+* City of Austin Open Data Portal: https://data.austintexas.gov/
+* City of Chicago Open Data Portal: https://data.cityofchicago.org/
+
+For more information on ggmap, read: https://github.com/dkahle/ggmap
+
+```{r, message=FALSE, warning=FALSE}
+# Import data and clean to create new columns
+austin_library_locations <- read_csv('Austin_Public_Library_Locations.csv') %>% 
+  mutate(latitude = str_extract(`Latitude / Longitude`, '.+\\,')
+         ,latitude = as.double(substring(latitude, 2, nchar(latitude) - 1))
+         ,longitude = str_extract(`Latitude / Longitude`, '\\,+.+')
+         ,longitude = as.double(substring(longitude, 3, nchar(longitude) - 3)))
+
+# View the data
+head(austin_library_locations)
+
+# Example
+qmplot(longitude, latitude, data = austin_library_locations, maptype = "toner-hybrid", color = I("red"), size = I(5), zoom = 12)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Import data
+chicago_bike_racks <- read_csv('Chicago_Bike_Racks.csv')
+
+# View the data
+head(chicago_bike_racks)
+
+qmplot(Longitude, Latitude, data = chicago_bike_racks, maptype = "toner-hybrid", color = I("blue"), alpha = I(.2), zoom = 11)
+```

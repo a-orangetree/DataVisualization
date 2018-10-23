@@ -1,0 +1,245 @@
+---
+title: "Lab 2"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+You should have already read chapters 1 and 2 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis*. The goal of this lab is to begin the process of actually unlocking the power of `ggplot2`. Through experimentation you should start to develop an understanding of `ggplot2` syntax and terminology.  
+
+# Dataset 
+
+We will be utilizing a subset of the BRFSS (Behavioral Risk Factor Surveillance System) survey collected annually by the Centers for Disease Control and Prevention (CDC). The data can be found in the provided `cdc.txt` file. The dataset contains 20,000 complete observations/records of 9 variables/fields, described below.
+
+* `genhlth` - How would you rate your general health? (excellent, very good, good, fair, poor)
+* `exerany` - Have you exercised in the past month? (1=yes, 0=no) 
+* `hlthplan` - Do you have some form of health coverage? (1=yes, 0=no) 
+* `smoke100` - Have you smoked at least 100 cigarettes in your life time? (1=yes, 0=no) 
+* `height` -  height in inches
+* `weight` - weight in pounds
+* `wtdesire` - weight desired in pounds
+* `age` - in years
+* `gender` - m for males and f for females
+
+# Tasks
+
+When creating some of the plots it will be useful to have a dataset with fewer observations. Take a sample of size 100 from the dataset and save it for use later. **You should set the seed before taking the sample to ensure the plots with the data are reproducible.** 
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(lubridate)
+
+# Set theme
+theme_set(theme_minimal())
+
+# Add variables and change data types to factors
+cdc_data <- read_delim('cdc.txt', delim = '|') %>% 
+  mutate(genhlth = factor(genhlth, level = c('poor', 'fair', 'good', 'very good', 'excellent')),
+         exerany = factor(exerany),
+         hlthplan = factor(hlthplan),
+         gender = factor(gender),
+         smoke100 = factor(smoke100),
+         height_bin = cut(height, 5),
+         weight_bin = cut(weight, 5))
+
+# Set seed so that the sample below always contains the same observations
+set.seed(10)
+
+# Take sample of 100
+cdc_sample <- sample_n(cdc_data, 100)
+```
+
+<br>
+
+0a. Above we used the function `sample_n` to select a specific number of observations from our data. What if I wanted to sample a percentage of observations instead of an absolute number? What function should I use? (hint: use Google)
+
+`sample_frac()`
+
+<br>
+
+0b. Last week we imported data using the `read_csv()` function and this week we imported data using `read_delim()`. Why was that necessary? What's the difference between these functions?
+
+`read_csv() imports data where the columns are separated by a comma. read_delim is a more general function that can import data using any column delimiter. Understanding how to import data properly will be VERY important in the REAL world.`
+
+<br>
+
+1. Using the subsample of 100 dataset (i.e. `cdc_sample`), construct a scatter plot of `weight` by `height`. Contruct 5 more scatter plots of `weight` by `height` that make use of aesthetic attributes `color`, `shape`, `size`, and `alpha`. You can define both aesthetics at the same time in each plot or one at a time. Just experiment.
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point()
+
+# Next 5
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(color = gender, size = 5))
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(color = weight_bin, size = height))
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(alpha = smoke100, color = smoke100), size = 3)
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(size = genhlth, color = genhlth, alpha = genhlth))
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(alpha = genhlth, size = weight))
+```
+
+<br>
+
+2. Using the subsample of 100 dataset, construct a scatter plot of `weight` by `height` that includes a fitted smooth (any method). Construct 5 more such plots that make use of options related to the smooth (i.g. the method, confidence intervals, ...).
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point() +
+  geom_smooth()
+
+# Next 5
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point(aes(size = weight)) +
+  geom_smooth(method = lm, color = 'red', se = FALSE)
+
+ggplot(cdc_sample, aes(weight, height, color = height_bin)) +
+  geom_point() +
+  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3), alpha = .2)
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~ genhlth)
+
+ggplot(cdc_sample, aes(weight, height)) +
+  geom_point() +
+  geom_smooth(span = .5, color = 'green', se = FALSE) +
+  geom_smooth(span = 1, color = 'red', se = FALSE) +
+  geom_smooth(span = .1, color = 'blue', se = FALSE)
+
+ggplot(cdc_sample, aes(weight, height, size = weight_bin, color = weight)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = lm)
+```
+
+<br>
+
+3. Using the entire dataset, construct a bar plot of `genhlth`. Construct 2 more bar plots of `genhlth` with one that incorporates `exerany` and one that incorporates `hlthplan` assigned as a aesthetic attribute (you decide which one). Think about the utility of each plot you build and what questions you might be answering with it. **Don't have to do, but as a challenge attempt to get the categeries to plot in order (poor, fair, good, very good, excellent).**
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_data, aes(genhlth)) +
+  geom_bar(fill = 'black')
+
+# Next 2...
+ggplot(cdc_data, aes(genhlth)) +
+  geom_bar(aes(fill = hlthplan), color = 'black')
+
+ggplot(cdc_data, aes(genhlth)) +
+  geom_bar(aes(alpha = exerany), color = 'black')
+```
+
+<br>
+
+4. Using the entire dataset, construct a density plot for `weight`. Construct 5 more density plots for `weight` that make use of aesthetic attributes `color`, `fill`, `alpha`, and `facets`. You can define multiple aesthetics at the same time in each plot or one at a time. Just experiment. Think about the utility of each plot you build and what questions you might be answering with it.
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_data, aes(weight)) +
+  geom_density()
+
+# Next 5
+ggplot(cdc_data, aes(weight)) +
+  geom_density(adjust = 10, color = "green") +
+  geom_density(adjust = 5, color = "red") +
+  geom_density(adjust = 1)
+
+ggplot(cdc_data, aes(weight)) +
+  geom_density(aes(fill = genhlth)) +
+  facet_wrap(~ genhlth)
+
+ggplot(cdc_data, aes(weight)) +
+  geom_density(aes(fill = genhlth), position = 'stack')
+
+ggplot(cdc_data, aes(weight, fill = gender, color = gender)) +
+  geom_density(alpha = .1)
+
+ggplot(cdc_data, aes(weight, fill = height_bin, color = height_bin)) +
+  geom_density(position = 'fill')
+```
+
+<br>
+
+5. Using the entire dataset, construct a plot with boxplots of `height` for each `gender`. Construct 3 more such plots that make use of aesthetic attributes such as `color`, `fill`, `alpha`, and `facets`. You can define multiple aesthetics at the same time in each plot or one at a time. Just experiment. Think about the utility of each plot you build and what questions you might be answering with it. Construct a jitter plot of `height` for each `gender` (maybe change `alpha` too). Do you find the jitter plot as useful as the orginal boxplot?
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_data, aes(gender, height)) +
+  geom_boxplot()
+
+# Next 3
+ggplot(cdc_data, aes(gender, height)) +
+  geom_boxplot(outlier.color = "red", outlier.shape = 1, outlier.alpha = .9)
+
+ggplot(cdc_sample, aes(gender, height)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = height_bin, size = height_bin))
+
+ggplot(cdc_data, aes(gender, height)) +
+  geom_boxplot(aes(fill = weight_bin))
+```
+
+<br>
+
+6. Using the entire dataset, construct a histogram of `wtdesire`. Construct 3 more such plots that have the `binwidth` changed and setting the lower bound of the x axis to 50 and the upper bound of the x axis to 300.
+
+```{r, message=FALSE, warning=FALSE}
+# Basic
+ggplot(cdc_data, aes(wtdesire)) +
+  geom_histogram(color = 'black')
+
+# Next 3
+ggplot(cdc_data, aes(wtdesire)) +
+  geom_histogram(color = 'black', binwidth = 20, aes(fill = gender)) +
+  xlim(60, 300)
+
+ggplot(cdc_data, aes(wtdesire)) +
+  geom_histogram(binwidth = 20, color = 'black') +
+  xlim(60, 300) +
+  facet_wrap(~ genhlth)
+
+ggplot(cdc_data, aes(wtdesire)) +
+  geom_histogram(color = 'black', binwidth = 20, aes(fill = weight_bin)) +
+  xlim(60, 300)
+```
+
+<br>
+
+7. Using the entire dataset, construct a scatter plot of `weight` by `height` that also incorporates `gender`. You should be making the points on the plot semi-transparent. Why? Examining the scatter plot, what are some observations you might make. Add a `smooth` geom using simple linear regression to your last plot. What happens?
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(cdc_data, aes(weight, height, color = gender)) +
+  geom_point(aes(alpha = .5)) +
+  geom_smooth(method = lm, se = FALSE)
+```
+
+Answer: Men are generally taller and weight more. As the their height grows, the weight grows faster than women as well.
+
+<br>
+
+8. Using the `economics` dataset (`data(economics)` to load) construct a plot of personal savings rate across time that includes a loess smooth. Add titles for the x- and y-axis. Also, add a main graph title. 
+
+```{r, message=FALSE, warning=FALSE}
+data(economics)
+
+econimics <- economics %>% 
+  mutate(year = year(date))
+
+ggplot(economics, aes(date, psavert)) +
+  geom_line() +
+  geom_smooth() +
+  labs(x = "year", y = 'personal savings rate') +
+  ggtitle('Personal Savings Rate over Time')
+```

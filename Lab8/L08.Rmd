@@ -1,0 +1,225 @@
+---
+title: "Lab 8"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The goal of this lab is to begin setting the stage for data wranging (a skill which is REQUIRED for real-life analysis and data visualization) and begin combining the data visualization components which have been introduced over the previous weeks.
+
+# Datasets 
+
+The ramen-ratings.csv is from Kaggle (https://www.kaggle.com/residentmario/ramen-ratings).
+
+Per the website: 
+
+Each record in the dataset is a single ramen product review. Review numbers are contiguous: more recently reviewed ramen varieties have higher numbers. Brand, Variety (the product name), Country, and Style (Cup? Bowl? Tray?) are pretty self-explanatory. Stars indicate the ramen quality, as assessed by the reviewer, on a 5-point scale; this is the most important column in the dataset!
+
+The meets.csv and openpowerlifiting.csv files are also from Kaggle (https://www.kaggle.com/open-powerlifting/powerlifting-database). 
+
+Per the website: 
+
+This dataset is a snapshot of the OpenPowerlifting database as of February 2018. OpenPowerlifting is an organization which tracks meets and competitor results in the sport of powerlifting, in which competitors complete to lift the most weight for their class in three separate weightlifting categories.
+
+# Task
+
+Run the provided R code, just below, prior to completing the tasks.
+
+Note: all visualizations below must have a distinct theme (to put another way, all visualizations must have a theme and no two visualizations can share the same theme). The themes do not need to match exactly those in the solution.
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+
+# Import data
+ramen_ratings_data <- read_csv('ramen-ratings.csv') %>% 
+  filter(Stars != 'Unrated',
+         !Style %in% c('Bar', 'Box', 'Can', NA)) %>% 
+  separate(`Top Ten`, sep = '\\s', into = c('Year', 'Rank')) %>% 
+  mutate(Stars = as.double(Stars),
+         Style = factor(Style),
+         Year = as.integer(Year)) 
+
+# Create a data set containing only observations with a rank
+top_ranked <- filter(ramen_ratings_data, !is.na(Rank), !is.na(Year))
+
+# Create a summarised version of the raw data, by country
+country_ratings <- ramen_ratings_data %>%
+  group_by(Country) %>% 
+  summarise(count = n(),
+            median = median(Stars),
+            mean = mean(Stars),
+            max = max(Stars),
+            min(Stars))
+
+# Create a data set containing the names of the countries with the most reviews
+most_reviewed_countries <- country_ratings %>% 
+  arrange(desc(count)) %>% 
+  head() %>% 
+  select(Country)
+
+# Examine the dimensions of the raw data
+dim(ramen_ratings_data)
+
+# Examine the raw data
+head(ramen_ratings_data)
+```
+
+<br>
+
+0a. Briefly describe a dataframe? What do the rows represent in a dataframe? What about the columns? (hint: Google "what is a dataframe in R")
+
+`A table or 2-dimensional representation data where rows represent observations and columns represent charactertics of each observation (i.e. variables).`
+
+<br>
+
+0b. Below is an example dataframe (a tibble is a specific implementation of a dataframe).
+
+Read this: http://r4ds.had.co.nz/tibbles.html
+
+```{r, message=FALSE, warning=FALSE}
+employee_data <- tibble(
+     emp_id = seq(5), 
+     emp_name = c("Xi","Hector","Sandy","Shaquille","Emily"),
+     salary = c(40, 45, 70, 60, 35), 
+     isManager = c(FALSE, FALSE, TRUE, FALSE, FALSE)
+   )
+
+head(employee_data)
+```
+
+<br>
+
+0c. Create a tibble called student_data with the following variables and display its top five rows:
+
+`student_id`: a series of numbers from 1 to 5
+`student_name`: a list of 5 names
+`understands_dataframes`: a list of 5 boolean values (i.e. TRUE or FALSE is a boolean value)
+`grade`: a list of 5 integers (presumably, those students who have a FALSE value for understands_dataframes get very low grades... in life)
+
+```{r, message=FALSE, warning=FALSE}
+student_data <- tibble(
+     student_id = seq(5), 
+     student_name = c("Master Shake", "Frylock", "Carl", "Meatwad", "Err"),
+     understands_dataframe = c(FALSE, FALSE, FALSE, TRUE, FALSE), 
+     grade = c(15, 0, 80, 100, 72)
+   )
+
+head(student_data)
+```
+
+<br>
+
+1a. Recreate the visualization below.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(filter(ramen_ratings_data, Country %in% most_reviewed_countries$Country), 
+       aes(Country, Stars, fill = Style)) +
+  geom_boxplot() +
+  facet_wrap(~ Style) +
+  theme_economist_white()
+```
+
+<br>
+
+1b. Why is it that in the above visualization only 5 countries are being displayed? What function is directly contributing to that effect?
+
+`The filter function is limiting the countries in the data to only those countries which also exist within the "Most Reviewed" data set.`
+
+<br>
+
+Run the provided R code, just below, prior to completing the tasks. 
+
+```{r, message=FALSE, warning=FALSE}
+library(lubridate)
+
+competition_metadata <- read_csv('meets.csv') %>% 
+  mutate(Year = year(Date),
+   Month = month(Date)) %>% 
+  select(-MeetPath)
+
+individual_results <- read_csv('openpowerlifting.csv', guess_max = 40000) %>% 
+  mutate(Sex = factor(Sex),
+         Equipment = factor(Equipment),
+         isTopThreePlace = ifelse(Place %in% c('1', '2','3'), TRUE, FALSE),
+         Age_Bin = case_when(Age < 20 ~ '< 20',
+                             Age >= 20 & Age < 30 ~ '20 - 30',
+                             Age >= 30 & Age < 40 ~ '30 - 40',
+                             Age >= 40 & Age < 50 ~ '40 - 50',
+                             Age >= 50 ~ '> 50')) %>% 
+  filter(BestSquatKg >= 0, BestDeadliftKg >= 0, BestBenchKg >= 0) %>% 
+  select(-Squat4Kg, -Bench4Kg, -Deadlift4Kg, -Wilks) %>% 
+  drop_na()
+
+combined_data <- left_join(individual_results, competition_metadata, by = c('MeetID'))
+
+top3_placement <- filter(combined_data, isTopThreePlace == TRUE)
+```
+
+<br>
+
+2a. Recreate the below visualization. 
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(BodyweightKg, BestSquatKg)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  facet_grid(Age_Bin ~ Sex, scales = 'free', space = 'free') +
+  theme_tufte() +
+  theme(axis.text = element_blank(), axis.ticks = element_blank())
+```
+
+<br>
+
+2b. Given that each individual plot displays, more or less, the same trend, what might be a better representation of the data? (hint: your audience probably has some difficult observing 8 different graphs, so what if you displayed fewer...)
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(BodyweightKg, BestSquatKg)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  theme_classic()
+```
+
+<br>
+
+3a. Recreate the below visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(Sex, BestDeadliftKg, fill = Equipment)) + 
+  geom_boxplot() +
+  theme_grey()
+```
+
+<br>
+
+3b. Create a visualization which presents the same information, but instead of using the `fill` parameter, uses facetting.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(Equipment, BestDeadliftKg)) + 
+  geom_boxplot() +
+  facet_wrap(~ Sex) +
+  theme_dark()
+```
+
+<br>
+
+4a. Recreate the below visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(top3_placement, aes(BestBenchKg)) +
+  geom_freqpoly() +
+  facet_grid(Sex ~ Place) +
+  theme_excel()
+```
+
+<br>
+
+4b. Create a visualization which presents the same information, but instead of using facettings, uses the `color` parameter.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(top3_placement, aes(BestBenchKg, color = Place)) +
+  geom_freqpoly() +
+  theme_fivethirtyeight()
+```

@@ -1,0 +1,184 @@
+---
+title: "Lab 5"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The goal of this Lab is to understand the concept of "layers" within ggplot. You should have already read through chapter 5 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis* and completed lab 4.
+
+<br>
+
+# Dataset
+
+The `athlete_events.csv` and `noc_regions.csv` files are from Kaggle.com (https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results). The `athlete_events.csv` is a historical dataset on the modern Olympic Games, including all the Games from Athens 1896 to Rio 2016. I scraped this data from www.sports-reference.com in May 2018. The `noc_regions.csv` is file which maps country abbreviation to country name.
+
+* `ID` - Unique number for each athlete
+* `Name` - Athlete's name 
+* `Sex` - M or F 
+* `Age` - Integer 
+* `Height` -  In centimeters
+* `Weight` - In kilograms
+* `Team` - Team Name
+* `NOC` - National Olympic Committee 3-letter code
+* `Games` - Year and season
+* `Year` - Integer
+* `Season` - Winter or summer
+* `City` - Host city
+* `Sport` - The sport in which the athlete competed
+* `Event` - The event in which the athlete competed
+* `Medal` - Gold, silver, bronze, or NA
+
+<br>
+
+# Task
+
+Run the below R code prior to completing the tasks.
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+
+# Set theme
+theme_set(theme_minimal())
+
+# Import both athlete and region data
+athlete_data <- read_csv('athlete_events.csv')
+region_data <- read_csv('noc_regions.csv')
+
+# Store the original row count of athlete data
+original_row_count <- dim(athlete_data)[1]
+
+# Combine region and athlete and region data. Convert appropriate columns to factors
+athlete_data <- athlete_data %>% 
+  left_join(., region_data, by = c('NOC')) %>% 
+  mutate(Season = factor(Season),
+         Medal = factor(Medal, levels = c('Gold', 'Silver', 'Bronze')),
+         Sex = factor(Sex))
+
+# Observe the imported data
+head(athlete_data)
+```
+
+<br>
+
+0a. Did we increase the row count of athlete data after we joined new columns from the region data? Prove it.
+
+```{r, message=FALSE, warning=FALSE}
+dim(athlete_data)[1] == original_row_count
+```
+
+<br>
+
+0b. Above we used the `head()` function to display the first five rows of our data. Using the head function, how could I display the top 10 rows instead?
+
+`head(someData, 10)`
+
+<br>
+
+0c. Challenge: Above we used the `left_join()` function to join `athlete_data` and `region_data`. 1.) What happens to rows which have an `NOC` value in the `athlete_data` that are not in the `region_data`? 2.) What happens to rows which have an `NOC` value in the `region_data` that are not in the `athlete_data`?
+
+`1.) The columns join from the region_data will contain NA values. 2.) Those rows will not be returned.`
+
+<br>
+
+1a. Re-create the below plot and answer the below questions.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(athlete_data, aes(x = Height, y = Weight, color = Sex))
+```
+
+<br>
+
+1b. What's missing from the above plot?
+
+`Layers`
+
+<br>
+
+2a. Re-create the below plot and answer the below questions.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(athlete_data, aes(x = Height, y = Weight, color = Sex)) +
+  geom_point(alpha = .2) +
+  geom_smooth(color = 'red', method = 'lm')
+```
+
+2b. What are the aesthetic mappings of this plot? In other words, what variables are mapped to what aspects of the visualization? 
+
+`Height is mapped to x-axis, Weight is mapped to y-axis, Red is mapped to the color aesthetic, and LM is mapped to the method.`
+
+<br>
+
+2c. How many layers are in this plot? What are the geometrc objects being used by these layers?
+
+`2. A scatter plot (geom_point) and a smoother (geom_scatter)`
+
+<br>
+
+3a. Use the below `medal_winners` dataframe to recreate the below plot and answer the below questions. (hint: you will also need to use the original data set, in addition to the below)
+
+```{r, message=FALSE, warning=FALSE}
+medal_winners <- filter(athlete_data, !is.na(Height)) %>% 
+  group_by(Medal) %>% 
+  summarise(count = n(), Height = mean(Height))
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(athlete_data, aes(x = Medal, Height)) +
+  geom_boxplot() +
+  geom_point(data = medal_winners, aes(x = Medal, y = Height), color = 'red', size = 5)
+```
+
+<br>
+
+3b. How many layers are in this plot? What are the geometrc objects being used by these layers?
+
+`2. A Boxplot (geom_boxplot) and a Scatterplot (geom_point).`
+
+<br>
+
+3c. What are the aesthetic mappings of this plot (do this for each layer)?
+
+`For the Boxplot: Medal is mapped to the x-axis, while Height is mapped to y-axis. For the Scatterplot: Medal is mapped to x-axis, while Height is mapped to y-axis. Red is mapped to color aesthetic and the number five is mapped to the size aesthetic.`
+
+<br>
+
+4a. Use the below `medal_winners_2016` dataframe to recreate the below plot and answer the below questions. (hint: use facet_wrap())
+
+```{r, message=FALSE, warning=FALSE}
+medal_winners_2016 <- athlete_data %>% 
+  filter((Year == 2016) & !is.na(Medal) & region %in% c('USA', 'China', 'Russia'))
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(medal_winners_2016, aes(region, fill = Medal)) +
+  geom_bar() +
+  facet_wrap(~ Sex)
+```
+
+<br>
+
+4b. How many layers are in this plot? What are the geometrc objects being used by these layers?
+
+`1. A Barplot. The facet_wrap() is not a layer`
+
+<br>
+
+4c. What are the aesthetic mappings of this plot (do this for each layer)?
+
+`Region is mapped to the x-axis, while the count of observation is mapped to the y-axis, while Medal is mapped to the color aesthetic.`
+
+<br>
+
+5. Recreate the below plot. Point out the key difference in your code between this visualization and the visualization in Question 2a.
+
+`The order of the layers matters! In this case, unlike question 2a, the smoother is first and the scatterplot is second.`
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(athlete_data, aes(x = Height, y = Weight, color = Sex)) +
+  geom_smooth(color = 'red', method = 'lm') +
+  geom_point(alpha = .2)
+```

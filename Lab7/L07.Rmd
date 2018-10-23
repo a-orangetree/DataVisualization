@@ -1,0 +1,168 @@
+---
+title: "Lab 7"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The goal of this lab is to develop an understanding of `facet`s, `position` and `coord`s and how to make use of these utilities when visualizing data. 
+
+# Datasets 
+
+The `pokemon_data.csv` file is from Kaggle (https://www.kaggle.com/abcsds/pokemon/home). 
+
+
+* `#`: ID for each pokemon
+* `Name`: Name of each pokemon
+* `Type 1`: Each pokemon has a type, this determines weakness/resistance to attacks
+* `Type 2`: Some pokemon are dual type and have 2
+* `Total`: sum of all stats that come after this, a general guide to how strong a pokemon is
+* `HP`: hit points, or health, defines how much damage a pokemon can withstand before fainting
+* `Attack`: the base modifier for normal attacks (eg. Scratch, Punch)
+* `Defense`: the base damage resistance against normal attacks
+* `SP Atk`: special attack, the base modifier for special attacks (e.g. fire blast, bubble beam)
+* `SP Def`: the base damage resistance against special attacks
+* `Speed`: determines which pokemon attacks first each round
+
+
+# Task
+
+Run the provided R code, just below, prior to completing the tasks. 
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+
+# Set theme
+theme_set(theme_minimal())
+
+# Import data
+pokemon_data <- read_csv('Pokemon.csv') %>% 
+  mutate(Legendary = factor(Legendary),
+         Generation = factor(Generation),
+         `Type 1` = factor(`Type 1`),
+         `Type 2` = factor(`Type 2`),
+         Total_Bin = factor(case_when(Total < 400 ~ '< 400',
+                           Total >= 400 & Total < 600 ~ '400 - 600',
+                           Total >= 600 & Total < 800 ~ '600 - 800')))
+
+# Create a data set containing only observations with a rank
+legendary_pokemon_data <- filter(pokemon_data, Legendary == 'True')
+
+# Check the number of rows and columns
+dim(pokemon_data)
+
+# Display the data
+glimpse(pokemon_data)
+```
+
+<br>
+
+0a. Before using case_when in my mutate function, I used the range() function. Specifically, I used range(pokemon_data$Total). What does the range() function do, and why was that useful know before using the case_when() function within the mutate() function?
+
+`Range displays both the min and max values of a numerical column. Another way to have accomplished this would have been to use the min() and max() functions. However, that would have required more typing. Knowing the minimum and maximum values prior to creating a new categorical variables which bins numerical data allows my to determine what bins to use.`
+
+<br>
+
+0b. What `facet_wrap()` and `facet_grid()` parameters controls whether the position scales are all the same in all panels (fixed) or allowed to vary between panels (free)? What is the default of this parameter?
+
+`scales, fixed`
+
+<br>
+
+0c. Fill in the blanks: __ control the values that appear on the axes and how those values map from the data to a position, the _ actually draws those values.
+
+`scales, coordinate system`
+
+<br>
+
+0d. What is the default coordinate system for basic geoms?
+
+`Cartesian`
+
+<br>
+
+1a. Recreate the visualization below.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(pokemon_data, aes(Generation, Speed)) +
+  geom_boxplot()
+```
+
+<br>
+
+1b. Recreate the visualization below. (Note: the color scheme or hue which you use doesn't matter. Just make sure it's not the default.)
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(pokemon_data, aes(Generation, Speed)) +
+  geom_boxplot(aes(fill = Legendary)) +
+  facet_wrap(~ Legendary) + 
+  scale_fill_hue(l=40)
+```
+
+<br>
+
+1c. Recreate the visualization below.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(pokemon_data, aes(Generation, Speed)) +
+  geom_boxplot(aes(fill = Legendary)) +
+  scale_fill_hue(l=40)
+```
+
+<br>
+
+1c. Compare and contrast 1a, 1b, and 1c. What are the pros and cons of each?
+
+`1a is a good, simple plot if someone wanted to know the speed of pokemons regardless of other pokemon characteristics. 1b and 1c display the same information in different ways (the former contrasts whether a pokemon is legendary via facets, while the latter uses fill).`
+
+<br>
+
+1d. On visualization 1b, what is "redundant" information?
+
+`The faceting and the color are each providing the same information. That is, they are both indicating whether a pokemon is legendary`
+
+<br>
+
+2. Recreate the below visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(pokemon_data, aes(`Type 1`)) +
+  geom_bar(aes(fill = Generation)) +
+  facet_grid(Generation ~ Legendary, scales = 'free', space = 'free') +
+  scale_fill_hue(l=40)
+```
+
+<br>
+
+3a. Recreate the visualization below. 
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(pokemon_data, aes(Attack, Defense)) +
+  geom_point() +
+  facet_grid(`Type 1` ~ `Type 2`)
+```
+
+<br>
+
+3b. Briefly state why the above visualization is bad.
+
+`Each individual plot is so small, the visualization as a whole provides no information about the data.`
+
+<br>
+
+4. Challenge: create 4 visualizations (could be very simple) and use grid.arrange() to plot them.
+
+```{r, message=FALSE, warning=FALSE}
+plot1 <- ggplot(pokemon_data, aes(`Type 1`)) +
+  geom_bar(fill = 'black') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+plot2 <- ggplot(pokemon_data, aes(Speed, HP, color = Legendary)) + 
+  geom_point()
+
+grid.arrange(plot1, plot2)
+```

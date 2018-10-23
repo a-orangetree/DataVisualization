@@ -1,0 +1,147 @@
+---
+title: "Lab 6"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The goal of this lab is to develop an understanding of the role scales play in plot construction with respect to the creation of axes and legends. 
+
+# Datasets 
+
+The `countriesOfTheWorld.csv` file is from Kaggle.com (https://www.kaggle.com/fernandol/countries-of-the-world/home). The information was scrapped from the CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/) and contains country specific data regarding economic, physical, and population characterstics.
+
+# Task
+
+Run the below R code prior to completing the tasks.
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+
+# Set theme
+theme_set(theme_minimal())
+
+# Import data
+country_data <- read_csv('countriesOfTheWorld.csv') %>% 
+  mutate(Region = factor(Region),
+         Climate = factor(Climate),
+         `Pop. Density (per sq. mi.)` = as.double(str_replace(`Pop. Density (per sq. mi.)`, ',', '.')),
+         `Coastline (coast/area ratio)` = as.double(str_replace(`Coastline (coast/area ratio)`, ',', '.')),
+         `Net migration` = as.double(str_replace(`Net migration`, ',', '.')),
+         `Phones (per 1000)` = as.double(str_replace(`Phones (per 1000)`, ',', '.')),
+         `Arable (%)` = as.double(str_replace(`Arable (%)`, ',', '.')),
+         `Crops (%)` = as.double(str_replace(`Crops (%)`, ',', '.')),
+         Agriculture = as.double(str_replace(Agriculture, ',', '.')),
+         Service = as.double(str_replace(Service, ',', '.')),
+         Industry = as.double(str_replace(Industry, ',', '.')),
+         Population_Bin = case_when(Population < 1000000 ~ '< 1M',
+                                    Population >= 1000000 & Population < 10000000 ~ '1M - 10M',
+                                    Population >= 10000000 & Population < 100000000 ~ '10M - 100M',
+                                    Population > 100000000 ~ '100M+'))
+
+# Create a data set with a handful of countries.
+individual_examples <- filter(country_data, Country %in% c('United States', 'China', "Hong Kong", "Fiji", 'Australia','South Africa', "Greenland"))
+
+# Create another data set with all other countries except those in the data set created immediately above.
+everyone_else_examples <- filter(country_data, !Country %in% individual_examples$Country)
+
+# Examine the data.
+glimpse(country_data)
+```
+
+<br>
+
+0a. Define `scales` within the context of data visualization.
+
+`Scales control the mapping from data to aesthetics. That is, each scale is a function from a region in data space to a region in aesthetic space.`
+
+<br>
+
+0b. Fill in the blank: a scale is required for every ____ used in the plot.
+
+`aesthetic`
+
+<br>
+
+0c. What can be seen as the inverse of a scale? In other words, what maps aethetics to data?
+
+`axis/legend`
+
+<br>
+
+1a. Recreate the below visualization and answer any questions that follow. 
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(country_data, aes(Birthrate, Deathrate, label = Country, color = Region)) +
+  geom_text(check_overlap = TRUE) +
+  labs(x = 'Number of Births per 1000 people', y = 'Number of Deaths per 1000 people') +
+  scale_x_continuous(breaks = c(0, 2000, 4000), labels = c('0', '2k', '4k')) +
+  scale_y_continuous(breaks = c(0, 1000, 2000, 3000), labels = c('0', '1k', '2k', '3k')) +
+  theme(legend.position = 'bottom', legend.title = element_blank())
+```
+
+<br>
+
+1b. When is it appropriate to remove a title or label from a visualization?
+
+`When it provides redundant or obvious information.`
+
+<br>
+
+2a. Recreate the below visualization and answer any questions that follow.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot() +
+  geom_point(data = everyone_else_examples, aes(`Area (sq. mi.)`, `GDP ($ per capita)`, color = Population_Bin)) +
+  geom_text(data = individual_examples, aes(`Area (sq. mi.)`, `GDP ($ per capita)`, label = Country, color = Population_Bin), show.legend = FALSE) +
+  scale_x_log10() +
+  scale_y_log10(breaks = c(1000, 3000, 10000, 30000), labels = c('1k', '3k', '10k', '30k'))
+```
+
+<br>
+
+2b. Why can we NOT remove the legend title in this visualization?
+
+`Because it provides extra/non-obvious information.`
+
+<br>
+
+3a. Recreate the below plot and answer any questions that follow. (hint: you'll need to use google)
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(country_data, aes(x = Climate)) +
+  geom_bar(aes(fill = `Population_Bin`)) +
+  labs(title = 'Number of Countries per Climate', x = NULL, y = NULL) +
+  scale_fill_hue(l=40, c=35) +
+  theme(legend.justification=c(1,1), legend.position=c(1,1), plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+```
+
+<br>
+
+3b. Do you agree or disagree with flipping the x and y coordinates on the graph? Why?
+
+`As usual in data visualization, there's no "right" answer. However, people in the Western Hemisphere generally read from left to right, not top to bottom, so perhaps the coordinate flip is burdensome for the audience.`
+
+<br>
+
+3c. What could be improved about the display of `Climate` within the visualization?
+
+`The numbers representing a climate category are, more than likely, meaningless to the audience. They should be replaced by simple, natural language adjectives (preferably) or phrases.`
+
+<br>
+
+3d. Challenge: display the count of each climate at the top or end of each bar.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(country_data, aes(x = Climate)) +
+  geom_bar(aes(fill = `Population_Bin`)) +
+  labs(y = 'Number of countries with that climate') +
+  scale_fill_hue(l=40, c=35) +
+  theme(legend.justification=c(1,1), legend.position=c(1,1)) +
+  coord_flip() +
+  geom_text(stat='count', aes(label=..count..), hjust= -1)
+```

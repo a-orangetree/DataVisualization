@@ -1,0 +1,203 @@
+---
+title: "Lab 1"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The intent of this lab is to help students determine how well they actually know R. You should have already read chapters 1 and 2 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis*.
+
+# Datasets 
+
+We will be using the `catsvdogs.txt`, `titanic.txt`, and `mmDATA.txt` datasets for this lab. The datasets can be found on Canvas in **Files** in either the `datasets_master` directory or `getting_started\datasets` directory. 
+
+# Tasks
+
+Use the `catsvdogs` dataset to complete the following. Should begin by exploring the data and reading *catsvdogs_codebook.txt* file.
+  
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+library(knitr)
+library(kableExtra)
+
+# Set theme (don't worry about this now... you'll learn about it later)
+theme_set(theme_minimal())
+
+# Import data (don't worry about this now... you'll learn about it later)
+catsvdogs_data <- read_delim('catsvdogs.txt', '|')
+
+titanic_data <- read_delim('titanic.txt', '|') %>% 
+  mutate(class = factor(class),
+         adult = factor(adult),
+         sex = factor(sex),
+         survived = factor(survived))
+
+mm_data <- read_delim('mmDATA.txt', '|')
+```
+
+<br>
+
+0a. What do you think you should do when you encounter an error in RStudio? 
+
+`1. Read the error. 2. Try to understand the error. 3. Copy and paste the error in Google.`
+
+<br>
+
+0b. How do you install new packages/libraries in R? (hint: Google: "how do I install new packages/libraries in R?")
+
+`install.packages('somePackage')`
+
+<br>
+
+0b. What does the `factor` function do above? (hint: Google "factor() in R")
+
+`It "encodes" a vector/column as a categorical variable.`
+
+<br>
+
+### Cats versus Dogs data
+
+1. Construct a stem plot (histogram or density plot) of the percent of households with pets. What do you observe?
+
+```{r, message=FALSE, warning=FALSE}
+# Response: 50% of more of households in every state, except one (D.C), have pets
+ggplot(catsvdogs_data) +
+  geom_histogram(aes(percent_households_with_pets), fill = 'black')
+```
+
+<br>
+
+2.  Which of the contiguous states (including DC) has the highest/lowest rate of pet ownership?
+
+```{r, message=FALSE, warning=FALSE}
+# Highest rate of pet ownership
+(catsvdogs_data %>% 
+  mutate('pet_owners' = percent_cat_owners + percent_dog_owners) %>% 
+  arrange(pet_owners) %>% 
+  select(location, pet_owners))[nrow(catsvdogs_data),] %>% 
+  kable() %>% 
+  kable_styling(full_width = F, position = "left")
+
+# Lowest rate of pet ownership
+(catsvdogs_data %>% 
+    mutate('pet_owners' = percent_cat_owners + percent_dog_owners) %>% 
+    arrange(pet_owners) %>% 
+    select(location, pet_owners))[1,] %>% 
+  kable() %>% 
+  kable_styling(full_width = F, position = "left")
+```
+
+<br>
+
+3. Decide on a process to classify each state and DC as preferring cats or dogs. Implement your process and produce a list of states preferring dogs and a list for those that prefer cats.
+
+```{r, message=FALSE, warning=FALSE}
+pet_preference <- catsvdogs_data %>% 
+  mutate('pet_preference' = ifelse(percent_cat_owners >= percent_dog_owners, 'cats', 'dogs')) %>% 
+  select(location, pet_preference)
+
+# These states prefer dogs:
+filter(pet_preference, pet_preference == 'dogs') %>% 
+  select(location) %>% 
+  kable() %>% 
+  kable_styling(full_width = F, position = "left")
+
+# These states prefer cats:
+filter(pet_preference, pet_preference == 'cats') %>% 
+  select(location) %>% 
+  kable() %>% 
+  kable_styling(full_width = F, position = "left")
+```
+
+<br>
+
+4. As part of your exploration of the data, you should have created tables for each of the variables. If not, do so now. Comment on the tables.
+
+<br>
+
+Response: the table contains binary categorical variables. I've made these variables factors during the import process.
+
+<br>
+
+### Titanic data
+
+<br>
+
+5. Construct a bar graph of the variable class.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(titanic_data) + 
+  geom_bar(aes(class), fill = 'black')
+```
+
+<br>
+
+6. Build a table of the variable class by the variable survived. What do you observe?
+
+```{r, message=FALSE, warning=FALSE}
+(survived_class_table <- table(titanic_data$class, titanic_data$survived))
+```
+
+<br>
+
+7. Construct a mosaic plot using the package graphics (function mosaicplot). (hint: the input will be the above table built in question 6)
+
+```{r, message=FALSE, warning=FALSE}
+mosaicplot(survived_class_table)
+```
+
+The middle class had more survivors proportional to the lowest and highest classes.
+
+<br>
+
+8. Explore any other questions you may have.
+
+```{r, message=FALSE, warning=FALSE}
+mosaicplot(table(titanic_data$sex, titanic_data$survived))
+```
+
+<br>
+
+### mmDATA data
+
+<br>
+
+9. Construct a bar plot of the colors.
+
+```{r, message=FALSE, warning=FALSE}
+mm_data_for_graph <- gather(select(mm_data, -source))
+
+ggplot(mm_data_for_graph) +
+  geom_bar(aes(value, fill = key))
+```
+
+<br>
+
+10. Plot the proportion of each color across time.
+
+```{r, message=FALSE, warning=FALSE}
+colors_over_time <- mm_data %>% 
+  mutate('source_updated' = str_sub(source, 3),
+         sum = blue + orange + green + yellow + brown + red,
+         blue_prop = blue / sum,
+         orange_prop = orange / sum,
+         green_prop = green / sum, 
+         yellow_prop = yellow / sum,
+         brown_prop = brown / sum,
+         red_prop = red / sum) %>% 
+  select(source_updated, blue_prop, orange_prop, green_prop, yellow_prop, brown_prop, red_prop) %>% 
+  group_by(source_updated) %>% 
+  summarise(blue = mean(blue_prop),
+            orange = mean(orange_prop),
+            green = mean(green_prop),
+            yellow = mean(yellow_prop),
+            brown = mean(brown_prop),
+            red = mean(red_prop))
+
+colors_over_time %>% gather(key, value, blue, orange, green, yellow, brown, red) %>% 
+  ggplot(aes(x = source_updated, y = value, group = key, color = key)) +
+  geom_line()
+```

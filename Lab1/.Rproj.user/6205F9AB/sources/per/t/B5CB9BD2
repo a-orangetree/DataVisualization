@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1538921566976.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3784013274",
+    "id" : "B5CB9BD2",
+    "lastKnownWriteTime" : 1538920591,
+    "last_content_update" : 1538920591,
+    "path" : "~/Desktop/DataVisualization/originalRmd/ggplot2_L04.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "43,63",
+        "scrollLine" : "37"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

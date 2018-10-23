@@ -1,0 +1,217 @@
+---
+title: "Lab 3"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+  
+# Overview
+  
+You should have already read chapters 1 and 2 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis*, begun reading chapters 3 and 4, and completed lab 2. The goal of this lab is to continue deepening your understanding of `ggplot2` as a data visualization tool and now to begin using this tool to solve more abstract problems. Visualizations are not an end in itself, but a means to communicate your insights.
+
+# Dataset 
+
+We will be utilizing data from Kaggle (https://www.kaggle.com/) which contains historical prices and sales of avocados in the United States (https://www.kaggle.com/neuromusic/avocado-prices). 
+
+* `[first column]` - Row identifier
+* `Date` - The date of the observation
+* `AveragePrice` - The average price of a single avocado
+* `Total Volume` - Total number of avocados sold
+* `4046` - Total number of avocados with PLU 4046 sold 
+* `4225` - Total number of avocados with PLU 4225 sold
+* `4770` -  Total number of avocados with PLU 4770 sold
+* `Total Bags` - The total number of bags sold
+* `Small Bags` - The total number of small bags sold
+* `Large Bags` - The total number of large bags sold
+* `XLarge Bags` - The total number of extra large bags sold
+* `type` - Conventional or organic  
+* `year` - The year
+* `region` - The city or region of the observation
+
+<br>
+
+# Tasks
+
+Your goal is to answer the below questions by making data visualizations using ggplot. There are different ways to answer each question, however some visualization choices are better suited than others. It is up to you whether to use the optional parameters available for each geom. Challenges are optional for undergraduates, but required for graduate students.
+
+Challenge: for each question below, create the plot requested AND a second version which distinguishes between *conventional* and *organic* avocados (hint: use either the optional parameters provided by the geoms OR use facet_wrap()).
+
+<br>
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+library(lubridate)
+
+# ggplot has various themes. Google them. The minimal theme is a safe bet.
+theme_set(theme_minimal())
+
+# Import the data
+avocado_data <- read_csv('avocado.csv') 
+
+# Filter the data to only contain aggregate values
+avocado_data <- avocado_data %>%
+  filter(region == 'TotalUS')
+  
+# Add new variables and convert other variables to be factors
+avocado_data <- avocado_data %>% 
+  mutate(month = month(Date),
+         volumePerBag = `Total Volume` / `Total Bags`,
+         region = factor(region),
+         type = factor(type),
+         year = factor(year))
+
+# View the data (You should ALWAYS do this!)
+head(avocado_data)
+```
+
+<br>
+
+0a. What does the `mutate()` function used above do?
+
+`Adds new columns (i.e. calculated variables) to our existing data.`
+
+<br>
+
+0b. How many columns and rows does the data set contain? (hint: Google "display the number of rows and columns of my data in R".)
+
+```{r, message=FALSE, warning=FALSE}
+# Option 1
+dim(avocado_data)
+
+# Option 2
+nrow(avocado_data)
+ncol(avocado_data)
+```
+
+<br>
+
+1. Which year has the most observations (i.e. number of rows in the data)? 
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(year)) +
+  geom_bar(fill = 'black')
+```
+
+<br>
+
+2. What is the distribution of total avocado sales volume?
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(`Total Volume`)) +
+  geom_density()
+
+# With Challenge 
+ggplot(avocado_data, aes(`Total Volume`)) +
+  geom_density(aes(fill = type))
+```
+
+<br>
+
+3. What is the 25th, 50th (median), and 75th percentile price points for avocados each year?
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(year, AveragePrice)) +
+  geom_boxplot()
+
+# With Challenge
+ggplot(avocado_data, aes(year, AveragePrice)) +
+  geom_boxplot(aes(fill = type)) + 
+  facet_wrap(~ type)
+```
+
+<br>
+
+4. What is the average price of oraganic avocados over time? (hint: use the `organic_Albany_data` data set created below)
+
+```{r, message=FALSE, warning=FALSE}
+# Create a subset of my data
+organic_data <- filter(avocado_data, type == 'organic')
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(organic_data, aes(Date, AveragePrice)) +
+  geom_line()
+
+# With Challenge
+ggplot(avocado_data, aes(Date, AveragePrice)) +
+  geom_line(aes(color = type))
+```
+
+<br>
+
+5. Does volume per bag have a trend over time (i.e. year)?
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(year, volumePerBag)) +
+  geom_boxplot()
+
+# With Challenge
+ggplot(avocado_data, aes(year, volumePerBag)) +
+  geom_boxplot(aes(fill = type)) +
+  facet_wrap(~ type)
+```
+
+<br>
+
+6. Is there an association between total volume and month?
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(month)) +
+  geom_bar(aes(weight = `Total Volume`), fill = 'black')
+
+# With Challenge
+ggplot(avocado_data, aes(month)) +
+  geom_bar(aes(weight = `Total Volume`, fill = type))
+```
+
+<br>
+
+7. Is there an association between average price and volume? (hint: you may need to use 2 geoms to construct this plot)
+
+```{r, message=FALSE, warning=FALSE}
+# Without Challenge
+ggplot(avocado_data, aes(AveragePrice, log(`Total Volume`), color = AveragePrice)) +
+  geom_point() +
+  geom_smooth(color = 'red', se = FALSE)
+
+# With Challenge
+ggplot(avocado_data, aes(AveragePrice, log(`Total Volume`), color = type, group = type)) +
+  geom_point() +
+  geom_smooth(color = 'red', se = FALSE, method = lm)
+```
+
+<br>
+
+8. Given the above graphs, answer the below questions:
+
+a. What year in our data has the least amount of observations?
+
+`2018`
+
+<br>
+
+b. What year has sold avocados at the highest average price? What is your justification?
+
+`2015. The median price is the highest.`
+
+<br>
+
+c. Where there any large increases and/or decreases in the price of avocados the past few years?
+
+`There looks to be a significant drop in price between 2015 and 2016.`
+
+<br>
+d. Is there a trend over time in the volume of avocados per bag? If so, what is it?
+
+`Yes. Avocados seem to sell less during the end of the year.`
+
+<br>
+
+e. Build one new visualization and give one "take-away" from that visualization.
