@@ -1,0 +1,183 @@
+---
+title: "Lab 9"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+The goal of this lab is to continue learning data wranging (a skill which is REQUIRED for real-life analysis and data visualization) and continue combining the data visualization components which have been introduced over the previous weeks.
+
+# Datasets
+
+The battles.csv and character-deaths.csv files are from Kaggle (https://www.kaggle.com/mylesoneill/game-of-thrones/home) and are based on information from the book series.
+
+From the website:
+
+Firstly, there is battles.csv which contains Chris Albon's "The War of the Five Kings" Dataset. Its a great collection of all of the battles in the series.
+
+Secondly we have character-deaths.csv from Erin Pierce and Ben Kahle. This dataset was created as a part of their Bayesian Survival Analysis.
+
+For specific variable information, please reference the Columns section of the Data tab on the Kaggle website.
+
+# Task
+
+Run the provided R code, just below, prior to completing the tasks.
+
+Note: Appropriate styling and labeling is REQUIRED (where APPROPRIATE... remember, this is subjective).
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+
+# Import data
+battle_data <- read_csv('battles.csv') %>% 
+  mutate(year = factor(year),
+         attacker_outcome = factor(attacker_outcome),
+         attacker_1 = factor(attacker_1),
+         attacker_2 = factor(attacker_2),
+         attacker_3 = factor(attacker_3),
+         attacker_4 = factor(attacker_4),
+         defender_1 = factor(defender_1),
+         defender_2 = factor(defender_2),
+         defender_3 = factor(defender_3),
+         defender_4 = factor(defender_4),
+         summer = factor(summer),
+         region = factor(region),
+         battle_type = factor(battle_type))
+
+deaths_data <- read_csv('character-deaths.csv') %>% 
+  mutate(`Death Year` = factor(`Death Year`),
+         `Book of Death` = factor(`Book of Death`),
+         Gender = factor(Gender),
+         Nobility = factor(Nobility),
+         GoT = factor(GoT),
+         CoK = factor(CoK),
+         SoS = factor(SoS),
+         FfC = factor(FfC),
+         DwD = factor(DwD))
+
+# View dimensions of the data
+dim(battle_data)
+dim(deaths_data)
+
+# What does the data look like
+glimpse(battle_data)
+glimpse(deaths_data)
+```
+
+<br>
+
+0a. Tidy data follows what 2 main principles:
+
+`1. Variables go in columns. 2. Observations go in rows.`
+
+<br>
+
+0b. In your own words, what does the `unique()` function do? Display all unique values within the Allegiances variable in the deaths_data.
+
+
+```{r, message=FALSE, warning=FALSE}
+unique(deaths_data$Allegiances)
+```
+
+<br>
+
+0c. Create a new column in the `battle_data` data set called `massive_battle` which displays TRUE if the defenders and attackers both have more than 10,000 warriors and FALSE if either condition is not met.
+
+```{r, message=FALSE, warning=FALSE}
+battle_data <- battle_data %>% 
+  mutate(massive_battle = attacker_size >= 10000 & defender_size >= 10000)
+```
+
+<br>
+
+1. Create a visualization which displays the number of battles a king has had (as an attacker) while at the same time displaying the number wins/losses.
+
+Note: `NA` is not an acceptable value for an attacking king. (hint: you will need to use a subset of the observations to accomplish this task)
+
+```{r, message=FALSE, warning=FALSE}
+battle_data2 <- filter(battle_data, !is.na(attacker_king))
+
+ggplot(battle_data2, aes(attacker_king, fill = attacker_outcome)) + 
+  geom_bar() +
+  coord_flip() +
+  theme_tufte() +
+  labs(x = "", y = "Number of Battles", title = "Battles by Attacking King", fill = "Outcome")
+```
+
+<br>
+
+2a. Recreate the below visualization (hint: it uses theme_grey())
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(battle_data, aes(attacker_size, defender_size, color = battle_type)) +
+  geom_point() +
+  theme_grey() +
+  scale_x_log10() +
+  labs(x = 'Attacker Size', y = 'Defender Size', color = 'Battle Type')
+```
+
+<br>
+
+2b. How many observations are in the battle data? How many observations are displayed in the `geom_point()` layer? (hint: question 2c may be helpful in answering the latter question)
+
+```{r, message=FALSE, warning=FALSE}
+# Number of observations in the data: 
+dim(battle_data)[1]
+
+# Number of observations displayed in the geom_point() layer?
+dim(filter(battle_data, is.na(attacker_size) | is.na(defender_size)))[1]
+```
+
+<br>
+
+2c. Why are there fewer geometric objects in the graphic (i.e. dots) than in the data? How do you know?
+
+`22 rows contain missing values which are removed from geom_point layer. Use the warnings() function to produce the output.`
+
+<br>
+
+3a. Build a table showing the number of deaths, by year, by gender. Remove any missing values from the summary output.
+
+```{r, message=FALSE, warning=FALSE}
+num_deaths_table <- deaths_data %>% 
+  group_by(`Death Year`, Gender) %>%
+  filter(!is.na(`Death Year`)) %>% 
+  summarise(number_of_deaths = n())
+```
+
+<br>
+
+3b. Build a visualization (however you want), graphically displaying the above table.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(num_deaths_table, aes(`Death Year`, number_of_deaths, fill = Gender)) +
+  geom_bar(stat = 'identity') +
+  labs(y = 'Number of Deaths') +
+  theme_wsj()
+```
+
+<br>
+
+3c. Compare and contrast 3a with 3b. What are the pros and cons?
+
+`3a provides detail. 3b provides quick insight. Both should expand on the meaning of 0 and 1 with respect to whether male or female.`
+
+<br>
+
+4a. Recreate the below visualization. (hint: it uses theme_bw())
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(deaths_data, aes(`Book Intro Chapter`, `Death Chapter`)) +
+  geom_point() +
+  facet_grid(Gender ~ Nobility) +
+  theme_bw()
+```
+
+<br>
+
+4b. Is the visualization created in 4a meaningful? Why or why not?
+
+`No. Notice some characters die before they are introduced. That's because the character dies in a later book. That information is not presented and leads to the above being misleading.`

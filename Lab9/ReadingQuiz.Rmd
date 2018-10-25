@@ -1,0 +1,65 @@
+---
+title: "Data Wrangling Reading Quiz"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+  
+# Overview
+  
+The goal of this lab is to test your understanding of data wrangling concepts and implementation using R.
+
+# Task
+
+Answer the below questions to the best of your ability.
+
+1. What is the first argument of a `dplyr` function?
+
+`A Dataframe`
+
+<br>
+
+2. What is the return object of a `dplyr` function?
+
+`A modified version of the original dataframe which was passed into the function`
+
+<br>
+
+3. What set of symbols represents a "pipeline of data"? How does it work?
+
+`%>%. It works by taking the thing on the left hand side and supplying it as the first argument to the right hand side.`
+
+<br>
+
+4. What is R's underlying philosophy with respect to missing values?
+
+`To force recognition and action. Recognition that values are missing and action to deal with those values (inaction is itself an action).`
+
+<br>
+
+5. What is the result of any operation that includes a missing value? Why?
+
+`The result will also be a missing value. This happends because there are few operations that turn an unknown value into a known value.`
+
+<br>
+
+6. What function tests whether or not a value is missing?
+
+`is.na()`
+
+<br>
+
+7. What `dplyr `function can be used to create new variables?
+
+`mutate()`
+
+<br>
+
+8. Fill in the blanks: Log-transformations turn [blank] relationships into [blank] relationships.
+
+`multiplicative/power. addititive/linear`
+
+<br>
+
+9. What are the two steps to creating a summary table?
+
+`1.) Define the grouping variables with group_by(). 2.) Describe how to summarise each group with a single row with summarise()`
