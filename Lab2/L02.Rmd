@@ -6,7 +6,7 @@ output: html_document
 
 # Overview
 
-You should have already read chapters 1 and 2 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis*. The goal of this lab is to begin the process of actually unlocking the power of `ggplot2`. Through experimentation you should start to develop an understanding of `ggplot2` syntax and terminology.  
+You should have already read chapters 1 and 2 in Hadley Wickham's *ggplot2: Elegant Graphics for Data Analysis*. The goal of this lab is to begin the process of working with `ggplot2`. Through experimentation you should start to develop an understanding of its syntax and terminology.  
 
 # Dataset 
 
@@ -59,7 +59,7 @@ cdc_sample <- sample_n(cdc_data, 100)
 
 <br>
 
-0b. Last week we imported data using the `read_csv()` function and this week we imported data using `read_delim()`. Why was that necessary? What's the difference between these functions?
+0b. In the previous lab we imported data using the `read_csv()` function and this week we imported data using `read_delim()`. Why was that necessary? What's the difference between these functions?
 
 `read_csv() imports data where the columns are separated by a comma. read_delim is a more general function that can import data using any column delimiter. Understanding how to import data properly will be VERY important in the REAL world.`
 
