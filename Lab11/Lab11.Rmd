@@ -1,0 +1,206 @@
+---
+title: "Lab 11"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+This lab is intended to begin combining all lessons learned in previous labs. You should have read through Chapter 11 by this point.
+
+# Datasets
+
+The `degrees-that-pay-back.csv`, `salaries-by-college-type.csv`, `salaries-by-region.csv` files are from Kaggle (https://www.kaggle.com/wsj/college-salaries).
+
+Please see the website for the data dictionary and high level descriptions of the data.
+
+# Task
+
+Run the provided R code, just below, prior to completing the tasks.
+
+Note: Appropriate styling and labeling is REQUIRED (where APPROPRIATE... remember, this is subjective).
+
+```{r, message=FALSE, warning=FALSE}
+# Import libraries
+library(tidyverse)
+library(ggthemes)
+
+# Import data
+degree_data <- read_csv('degrees-that-pay-back.csv') %>% 
+  mutate(`Starting Median Salary` = as.double(str_replace_all(`Starting Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career Median Salary` = as.double(str_replace_all(`Mid-Career Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career 10th Percentile Salary` = as.double(str_replace_all(`Mid-Career 10th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 25th Percentile Salary` = as.double(str_replace_all(`Mid-Career 25th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 75th Percentile Salary` = as.double(str_replace_all(`Mid-Career 75th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 90th Percentile Salary` = as.double(str_replace_all(`Mid-Career 90th Percentile Salary`, "[\\$\\,]", "")),
+         PercentChangeBin = case_when(`Percent change from Starting to Mid-Career Salary` < 25 ~ '< 25%',
+                                      `Percent change from Starting to Mid-Career Salary` >= 25 & `Percent change from Starting to Mid-Career Salary` < 50 ~ '25% - 75%',
+                                      `Percent change from Starting to Mid-Career Salary` >= 50 & `Percent change from Starting to Mid-Career Salary` < 75 ~ '50% - 75%',
+                                      `Percent change from Starting to Mid-Career Salary` >= 75 ~ '75% +'))
+
+dim(degree_data)
+glimpse(degree_data)
+
+college_type_data <- read_csv('salaries-by-college-type.csv', na = "N/A") %>% 
+  mutate(`Starting Median Salary` = as.double(str_replace_all(`Starting Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career Median Salary` = as.double(str_replace_all(`Mid-Career Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career 10th Percentile Salary` = as.double(str_replace_all(`Mid-Career 10th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 25th Percentile Salary` = as.double(str_replace_all(`Mid-Career 25th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 75th Percentile Salary` = as.double(str_replace_all(`Mid-Career 75th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 90th Percentile Salary` = as.double(str_replace_all(`Mid-Career 90th Percentile Salary`, "[\\$\\,]", "")))
+
+dim(college_type_data)
+glimpse(college_type_data)
+
+region_data <- read_csv('salaries-by-region.csv', na = "N/A") %>% 
+  mutate(`Starting Median Salary` = as.double(str_replace_all(`Starting Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career Median Salary` = as.double(str_replace_all(`Mid-Career Median Salary`, "[\\$\\,]", "")),
+         `Mid-Career 10th Percentile Salary` = as.double(str_replace_all(`Mid-Career 10th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 25th Percentile Salary` = as.double(str_replace_all(`Mid-Career 25th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 75th Percentile Salary` = as.double(str_replace_all(`Mid-Career 75th Percentile Salary`, "[\\$\\,]", "")),
+         `Mid-Career 90th Percentile Salary` = as.double(str_replace_all(`Mid-Career 90th Percentile Salary`, "[\\$\\,]", "")))
+
+dim(region_data)
+glimpse(region_data)
+```
+
+<br>
+
+0a. Use the `rename()` function to rename the `Mid-Career 90th Percentile Salary` variable in the `degree_data` data to `My Future Salary`
+
+```{r, message=FALSE, warning=FALSE}
+degree_data %>% 
+  rename('My Future Salary' = `Mid-Career 90th Percentile Salary`) %>% 
+  names()
+```
+
+<br>
+
+0b. Create a data frame using the `degree_data` data with the following characteristics:
+
+1. Changes the `Percent change from Starting to Mid-Career Salary` variable to an integer
+2. Only contains observations with a starting salary greater than $50,000, but with a percent change less than 75% from the starting to mid-career salary.
+3. Only contains the variables: `Undergraduate Major`, `Mid-Career Median Salary`, `Percent change from Starting to Mid-Career Salary`
+4. Displays values in descending order from highest `Mid-Career Median Salary` to lowest.
+
+```{r, message=FALSE, warning=FALSE}
+(test <- degree_data %>% 
+  mutate(`Percent change from Starting to Mid-Career Salary` = as.integer(`Percent change from Starting to Mid-Career Salary`)) %>% 
+  filter(`Starting Median Salary` > 50000 & PercentChangeBin != '75% +') %>% 
+  select(`Undergraduate Major`, `Mid-Career Median Salary`,`Percent change from Starting to Mid-Career Salary`) %>% 
+  arrange(desc(`Mid-Career Median Salary`)))
+```
+
+<br>
+
+1a. Add a column to the `region_data` dataframe called `isNorthwestern` which contains a value of 1 for Northwestern and a 0 for all other Universities and another column called `isMidwest` which contains a value of 1 for midwest and a 0 for all other regions.
+
+(Note: you will need to find the exact values for "Northwestern" and the "midwest" on your own. hint: use unique() or View())
+
+```{r, message=FALSE, warning=FALSE}
+unique(region_data$Region)
+unique(filter(region_data, str_detect(`School Name`, 'Northwestern'))$`School Name`)
+
+region_data <- region_data %>% 
+  mutate(isMidwest = ifelse(str_detect(Region, "Midwestern") == TRUE, 1, 0),
+         isNorthwestern = ifelse(str_detect(`School Name`, "Northwestern University") == TRUE, 1, 0))
+```
+
+<br>
+
+1b. Recreate this visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(region_data, aes(`Starting Median Salary`, `Mid-Career Median Salary`, label = `School Name`)) +
+  geom_smooth() +
+  geom_point(data = filter(region_data, isNorthwestern == 0), aes(`Starting Median Salary`, `Mid-Career Median Salary`, label = `School Name`)) +
+  geom_point(data = filter(region_data, isNorthwestern == 1), aes(`Starting Median Salary`, `Mid-Career Median Salary`, label = `School Name`), color = 'red') +
+  theme_tufte()
+```
+
+<br>
+
+1c. Recreate this visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(region_data, aes(`Starting Median Salary`, `Mid-Career Median Salary`, label = `School Name`)) +
+  geom_bin2d(data = filter(region_data, isNorthwestern == 0), aes(`Starting Median Salary`, `Mid-Career Median Salary`)) +
+  geom_point(data = filter(region_data, isNorthwestern == 1), aes(`Starting Median Salary`, `Mid-Career Median Salary`, label = `School Name`), color = 'red') +
+  geom_smooth(color = 'yellow') +
+  theme_tufte()
+```
+
+<br>
+
+1d. Compare and contrast the visualizations in 0b and 0c.
+
+`Both actually do a good job of providing insight into the density of observations. In this particular case it appears that the geom_point is slightly easier on the eyes. However, if more data was involved, geom_bin2d() may be preferred.`
+
+<br>
+
+2a. Create a dataset called `region_data2` using the `region_data` which removes `NA` values from the `Region` column and only contains the `Region` and `School Name` variables. 
+
+```{r, message=FALSE, warning=FALSE}
+region_data2 <- filter(region_data, !is.na(Region))
+region_data2 <- select(region_data2, `School Name`, Region)
+
+#OR
+
+region_data2 <- region_data %>%
+  filter(!is.na(Region)) %>% 
+  select(`School Name`, Region)
+```
+
+<br>
+
+2b. Create a dataset called `college_type_data2` using the `college_type_data` which removes `NA` from the `School Type` column.
+
+```{r, message=FALSE, warning=FALSE}
+college_type_data2 <- filter(college_type_data, !is.na(`School Type`))
+```
+
+<br>
+
+2c. Execute the below code and recreate the below visualization using `combined_data`. (hint: theme is dark)
+
+```{r}
+combined_data <- left_join(college_type_data2,
+                           region_data2, 
+                           by = c('School Name')) 
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(Region, `Starting Median Salary`)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.05) +
+  facet_wrap(~ `School Type`) +
+  theme_dark()
+```
+
+<br>
+
+2d. Recreate the below visualization and table. (hint: theme is minimal)
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(combined_data, aes(`School Type`)) +
+  geom_bar(fill = 'black') +
+  labs(y = "Number of Observations") +
+  theme_minimal()
+```
+
+```{r, message=FALSE, warning=FALSE}
+combined_data %>% 
+  group_by(`School Type`) %>% 
+  summarise('Number of Observations' = n())
+```
+
+<br>
+
+3a. Recreate the below visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(degree_data, aes(`Starting Median Salary`, `Mid-Career Median Salary`,
+                        label = `Undergraduate Major`,
+                        color = PercentChangeBin)) +
+  geom_text(check_overlap = TRUE, vjust = 'inward', hjust = 'inward')
+```
