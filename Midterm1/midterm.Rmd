@@ -1,0 +1,121 @@
+---
+title: "Midterm Lab"
+author: "STAT 359 Data Visualization"
+output: html_document
+---
+
+# Overview
+
+For reference, the graphics were generated to be 6 inches by 6 inches. Tasks 1 & 2 ask you to replicate plots and provide some basic insight into what the graphics are communicating. Task 3 asks you to provide short descriptions/explanations regarding issues and concepts in `ggplot2`. 
+
+# Datasets 
+
+The `appendix.csv` file is from Kaggle.com (https://www.kaggle.com/edx/course-study/version/1).
+
+# Tasks
+
+0a. Describe each of the following:
+
+1. `ggplot()`
+2. `aes()`
+3. `geoms`
+4. `stats`
+5. `scales`
+6. `theme()`
+
+<br>
+
+0b. Explain the difference between using this code `geom_point(aes(color = VARIABLE))` as opposed to using `geom_point(color = VARIABLE)`.
+
+``
+
+<br>
+
+1a. Run the below code and answer the below questions.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+online_course_data <- read_csv('appendix.csv', na = '---') %>% 
+  mutate(Institution = factor(Institution),
+         `Honor Code Certificates`  = factor(`Honor Code Certificates`),
+         `Course Subject` = factor(`Course Subject`))
+
+dim(online_course_data)
+glimpse(online_course_data)
+```
+
+<br>
+
+1b. How many courses are there per subject for each instiution? 
+
+Notes:
+ * Change the y-label to be more descriptive than "count"
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(online_course_data, aes(`Course Subject`, fill = Institution)) +
+  geom_bar() +
+  labs(y = 'Number of Courses')
+
+# OR
+
+ggplot(online_course_data, aes(`Course Subject`)) +
+  geom_bar() +
+  facet_wrap(~ Institution) +
+  theme(legend.position="bottom") +
+  labs(y = 'Number of Courses')
+
+# OR
+
+ggplot(online_course_data, aes(Institution)) +
+  geom_bar() +
+  facet_wrap(~ `Course Subject`, scales = 'free_y') +
+  theme(legend.position="bottom") +
+  labs(y = 'Number of Courses')
+```
+
+<br>
+
+1c. In one plot, show the `Median Age` of Course Subjects (including the 25th, 50th, and 75th percentiles) broken out by both Year and Institution.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(online_course_data, aes(`Course Subject`, `Median Age`)) +
+  geom_boxplot() +
+  facet_grid(Year ~ Institution)
+
+# OR
+
+ggplot(online_course_data, aes(`Course Subject`, `Median Age`, fill = Institution)) +
+  geom_boxplot() +
+  facet_wrap(~ Year)
+
+# OR
+
+ggplot(online_course_data, aes(`Course Subject`, `Median Age`, fill = Year)) +
+  geom_boxplot() +
+  facet_wrap(~ Institution)
+```
+
+<br>
+
+2d. Recreate the below visualization.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(online_course_data, aes(`% Certified`, `Median Hours for Certification`, color = Institution)) +
+  geom_smooth(se = FALSE, method = 'lm', show.legend = FALSE) +
+  geom_point() +
+  scale_y_log10() +
+  scale_x_log10() +
+  labs(title = 'Hours for Certification versus % Certified')
+```
+
+<br>
+
+2e. Create a visualization which plots `Audited (> 50% Course Content Accessed)` against `% Bachelor's Degree or Higher` and displays the name of the course instead of a dot, broken out by the course subject.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(online_course_data, aes(`Audited (> 50% Course Content Accessed)`, `% Bachelor's Degree or Higher`, label = `Course Title`)) +
+  geom_text(check_overlap = TRUE, vjust = 'inward', hjust = 'inward') +
+  scale_x_log10() +
+  facet_wrap(~ `Course Subject`)
+```
